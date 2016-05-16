@@ -153,10 +153,11 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 	}
 
 	
-	private void handleIf(AbstractBinopExpr eqExpr, Abstract1 in, AWrapper ow,
+		private void handleIf(AbstractBinopExpr eqExpr, Abstract1 in, AWrapper ow,
 			AWrapper ow_branchout) throws ApronException {
 
-			Value left = eqExpr.getOp1();
+
+		Value left = eqExpr.getOp1();
 		Value right = eqExpr.getOp2();
 		System.out.println("vars are " + in.getEnvironment().getIntVars()[0].toString());
 
@@ -172,23 +173,34 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 			}
 			lAr = new Texpr1VarNode(((JimpleLocal) left).getName());
 			if(right instanceof IntConstant){
-				
-				
-				if(eqExpr instanceof JNeExpr){
+
 					
 					Texpr1Node rAr = new Texpr1CstNode(new MpqScalar(((IntConstant) right).value));
 					Texpr1Intern xp = new Texpr1Intern(env, rAr);
-					int i =((IntConstant)right).value;
-					Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
-					Tcons1 constraint= new Tcons1(env, Tcons1.DISEQ, op);
-					ow.set(new Abstract1(man, in));
-					ow.get().meet(man,constraint);
-					
+					Tcons1 OwConstraint= getOwConstraint(eqExpr,rAr, lAr);
+					Tcons1 BranchOutconstraint= getBranchoutConstraint(eqExpr,rAr, lAr);
 					ow_branchout.set(new Abstract1(man, in));
-					ow_branchout.get().assign(man, ((JimpleLocal) left).getName(), xp, null);
+					ow_branchout.get().meet(man,BranchOutconstraint);
+					ow.set(new Abstract1(man, in));
+					ow.get().meet(man,OwConstraint);
+					
 					System.out.println("After if ow is " + ow.get().toString(man));
 					System.out.println("After if ow_branchout is " + ow_branchout.get().toString(man));
-				}
+				
+				
+//				if(eqExpr instanceof JNeExpr){
+//					
+//					Texpr1Node rAr = new Texpr1CstNode(new MpqScalar(((IntConstant) right).value));
+//					Texpr1Intern xp = new Texpr1Intern(env, rAr);
+//					Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
+//					Tcons1 constraint= new Tcons1(env, Tcons1.DISEQ, op);
+//					ow_branchout.set(new Abstract1(man, in));
+//					ow_branchout.get().meet(man,constraint);
+//					ow.set(new Abstract1(man, in));
+//					ow.get().assign(man, ((JimpleLocal) left).getName(), xp, null);
+//					System.out.println("After if ow is " + ow.get().toString(man));
+//					System.out.println("After if ow_branchout is " + ow_branchout.get().toString(man));
+//				}
 				
 			}
 		} else {
@@ -196,28 +208,68 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 					+ " name:" + ((JimpleLocal) left).getName());
 		}
 		
-		if(eqExpr instanceof JEqExpr){
-			
-		}
-		else if(eqExpr instanceof JEqExpr){
-			
-		}else if(eqExpr instanceof JGeExpr){
-			
-		}else if(eqExpr instanceof JGtExpr){
-			
-		}
-		else if(eqExpr instanceof JLeExpr){
-			
-		}
-		else if(eqExpr instanceof JLtExpr){
-			
-		}
-		else if(eqExpr instanceof JNeExpr){
-			
-		}
+	
 		
 		
 		// TODO: Handle required conditional expressions 
+	}
+		
+	private Tcons1 getBranchoutConstraint(AbstractBinopExpr e,Texpr1Node rAr, Texpr1Node lAr){
+		Tcons1 constraint = null;
+		
+		if(e instanceof JNeExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
+		 constraint= new Tcons1(env, Tcons1.DISEQ, op);
+		}
+		else if(e instanceof JEqExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
+			 constraint= new Tcons1(env, Tcons1.EQ, op);
+		}
+		else if(e instanceof JGeExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
+			 constraint= new Tcons1(env, Tcons1.SUPEQ, op);
+		}else if(e instanceof JGtExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
+			 constraint= new Tcons1(env, Tcons1.SUP, op);
+		}
+		else if(e instanceof JLeExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,rAr, lAr);
+			 constraint= new Tcons1(env, Tcons1.SUPEQ, op);
+		}
+		else if(e instanceof JLtExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,rAr, lAr);
+			 constraint= new Tcons1(env, Tcons1.SUP, op);
+		}
+		return constraint;
+	}
+	
+	private Tcons1 getOwConstraint(AbstractBinopExpr e,Texpr1Node rAr, Texpr1Node lAr){
+		Tcons1 constraint = null;
+		
+		if(e instanceof JNeExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
+		 constraint= new Tcons1(env, Tcons1.EQ, op);
+		}
+		else if(e instanceof JEqExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
+			 constraint= new Tcons1(env, Tcons1.DISEQ, op);
+		}
+		else if(e instanceof JGeExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,rAr, lAr);
+			 constraint= new Tcons1(env, Tcons1.SUP, op);
+		}else if(e instanceof JGtExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,rAr, lAr);
+			 constraint= new Tcons1(env, Tcons1.SUPEQ, op);
+		}
+		else if(e instanceof JLeExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
+			 constraint= new Tcons1(env, Tcons1.SUP, op);
+		}
+		else if(e instanceof JLtExpr){
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
+			 constraint= new Tcons1(env, Tcons1.SUPEQ, op);
+		}
+		return constraint;
 	}
 	
 	
