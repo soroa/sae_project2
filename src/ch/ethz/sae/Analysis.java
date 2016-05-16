@@ -156,8 +156,9 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 	private void handleIf(AbstractBinopExpr eqExpr, Abstract1 in, AWrapper ow,
 			AWrapper ow_branchout) throws ApronException {
 
-		Value left = eqExpr.getOp1();
+			Value left = eqExpr.getOp1();
 		Value right = eqExpr.getOp2();
+		System.out.println("vars are " + in.getEnvironment().getIntVars()[0].toString());
 
 		Texpr1Node lAr = null;
 
@@ -170,10 +171,51 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 				return;
 			}
 			lAr = new Texpr1VarNode(((JimpleLocal) left).getName());
+			if(right instanceof IntConstant){
+				
+				
+				if(eqExpr instanceof JNeExpr){
+					
+					Texpr1Node rAr = new Texpr1CstNode(new MpqScalar(((IntConstant) right).value));
+					Texpr1Intern xp = new Texpr1Intern(env, rAr);
+					int i =((IntConstant)right).value;
+					Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lAr, rAr);
+					Tcons1 constraint= new Tcons1(env, Tcons1.DISEQ, op);
+					ow.set(new Abstract1(man, in));
+					ow.get().meet(man,constraint);
+					
+					ow_branchout.set(new Abstract1(man, in));
+					ow_branchout.get().assign(man, ((JimpleLocal) left).getName(), xp, null);
+					System.out.println("After if ow is " + ow.get().toString(man));
+					System.out.println("After if ow_branchout is " + ow_branchout.get().toString(man));
+				}
+				
+			}
 		} else {
 			System.out.println("left: unexpected:" + left.getClass()
 					+ " name:" + ((JimpleLocal) left).getName());
 		}
+		
+		if(eqExpr instanceof JEqExpr){
+			
+		}
+		else if(eqExpr instanceof JEqExpr){
+			
+		}else if(eqExpr instanceof JGeExpr){
+			
+		}else if(eqExpr instanceof JGtExpr){
+			
+		}
+		else if(eqExpr instanceof JLeExpr){
+			
+		}
+		else if(eqExpr instanceof JLtExpr){
+			
+		}
+		else if(eqExpr instanceof JNeExpr){
+			
+		}
+		
 		
 		// TODO: Handle required conditional expressions 
 	}
@@ -185,7 +227,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 			List<AWrapper> fallOut, List<AWrapper> branchOuts) {
 		
 		Stmt s = (Stmt) op;
-
+		System.out.println("current state is " +in.toString(man));
 		Abstract1 in = ((AWrapper) current).get();
 
 		Abstract1 o;
