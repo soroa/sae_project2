@@ -2,7 +2,15 @@ package ch.ethz.sae;
 
 import java.util.HashMap;
 
+import apron.Abstract1;
 import apron.ApronException;
+import apron.MpqScalar;
+import apron.Tcons1;
+import apron.Texpr1BinNode;
+import apron.Texpr1CstNode;
+import apron.Texpr1Intern;
+import apron.Texpr1Node;
+import apron.Texpr1VarNode;
 import soot.Unit;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JNewExpr;
@@ -14,20 +22,20 @@ import soot.jimple.spark.SparkTransformer;
 import soot.jimple.spark.pag.AllocNode;
 import soot.jimple.spark.pag.Node;
 import soot.jimple.spark.pag.PAG;
-import soot.Local;
-import soot.PatchingChain;
-import soot.Scene;
-import soot.SootClass;
-import soot.SootMethod;
+import soot.*;
 import soot.toolkits.graph.BriefUnitGraph;
 import soot.jimple.internal.*;
 import soot.jimple.*;
 
 public class Verifier {
 	
+	/* field to record the output for junit */
+	public static String response;
+
 	public static void main(String[] args) {
 		if (args.length != 1) {
-			System.err.println("Usage: java -classpath soot-2.5.0.jar:./bin ch.ethz.sae.Verifier <class to test>");
+			System.err
+					.println("Usage: java -classpath soot-2.5.0.jar:./bin ch.ethz.sae.Verifier <class to test>");
 			System.exit(-1);
 		}
 		String analyzedClass = args[0];
@@ -39,8 +47,8 @@ public class Verifier {
 		int divisionByZeroFlag = 1;
 
 		for (SootMethod method : c.getMethods()) {
-			System.out.println("name of method is "+ method.getName());
-			Analysis analysis = new Analysis(new BriefUnitGraph(method.retrieveActiveBody()), c);
+			Analysis analysis = new Analysis(new BriefUnitGraph(
+					method.retrieveActiveBody()), c, method);
 			analysis.run();
 
 			if (!verifyBounds(method, analysis, pointsToAnalysis)) {
@@ -50,101 +58,121 @@ public class Verifier {
 				divisionByZeroFlag = 0;
 			}
 		}
-		
+
 		if (divisionByZeroFlag == 1) {
-			System.out.println(analyzedClass + " NO_DIV_ZERO");
+			response = analyzedClass + " NO_DIV_ZERO";
+			System.out.println(response);
 		} else {
-			System.out.println(analyzedClass + " MAY_DIV_ZERO");
+			response = analyzedClass + " MAY_DIV_ZERO";
+			System.out.println(response);
 		}
-		
+		response += "\n";
 		if (programCorrectFlag == 1) {
-            System.out.println(analyzedClass + " NO_OUT_OF_BOUNDS");
-        } else {
-            System.out.println(analyzedClass + " MAY_OUT_OF_BOUNDS");
-        }
+			response += analyzedClass + " NO_OUT_OF_BOUNDS";
+			System.out.println(analyzedClass + " NO_OUT_OF_BOUNDS");
+		} else {
+			response += analyzedClass + " MAY_OUT_OF_BOUNDS";
+			System.out.println(analyzedClass + " MAY_OUT_OF_BOUNDS");
+		}
 	}
-	
-	private static boolean verifyDivisionByZero(SootMethod method, Analysis fixPoint) {
+
+	private static boolean verifyDivisionByZero(SootMethod method,
+			Analysis fixPoint) {
 		for (Unit u : method.retrieveActiveBody().getUnits()) {
 			AWrapper state = fixPoint.getFlowBefore(u);
 			try {
-		    		if (state.get().isBottom(Analysis.man))
-	    			// unreachable code
+				if (state.get().isBottom(Analysis.man))
+					// unreachable code
 					continue;
 			} catch (ApronException e) {
 				e.printStackTrace();
-			} 
-			
-			//TODO: Check that all divisors are not zero
-	    }
-		
-		//Return false if the method may have division by zero errors
-	    return false;
+			}
+
+			// TODO: Check that all divisors are not zero
+		}
+
+		// Return false if the method may have division by zero errors
+		return false;
 	}
 
 	private static boolean verifyBounds(SootMethod method, Analysis fixPoint,
 			PAG pointsTo) {
-				
-		//TODO: Create a list of all allocation sites for PrinterArray
 		
+		// TODO: Create a list of all allocation sites for PrinterArray
+
 		HashMap<JNewExpr, Integer> printerArraySizeOf = new HashMap<JNewExpr, Integer>();
 		PatchingChain<Unit> unitChain = method.retrieveActiveBody().getUnits();
-		
+
 		for (Unit u : unitChain) {
 			AWrapper state = fixPoint.getFlowBefore(u);
-			
-		
+
+			System.out.println(state.get());
+			System.out.println(u);
+
 			if (u instanceof JAssignStmt) {
 				JAssignStmt assign = (JAssignStmt) u;
-				
+
 				if (assign.getRightOp() instanceof JNewExpr) {
 					// the statement following this newexpr will hopefully be a
-					// constructor call, so we will remember the argument of that call in printerArraySizeOf
+					// constructor call, so we will remember the argument of
+					// that call in printerArraySizeOf
 					Unit successor = unitChain.getSuccOf(u);
 					JSpecialInvokeExpr constructorCall = (JSpecialInvokeExpr) ((JInvokeStmt) successor)
 							.getInvokeExpr();
 
 					int size = ((IntConstant) constructorCall.getArg(0)).value;
-					printerArraySizeOf.put((JNewExpr) assign.getRightOp(), size);
+					printerArraySizeOf
+							.put((JNewExpr) assign.getRightOp(), size);
 				}
 			}
-			
+
 			try {
 				if (state.get().isBottom(Analysis.man)) {
 					// unreachable code
-					
-					// commented because the analysis does nothing yet, but we still want to check outofbounds
-					//continue;
-				} 
+
+					// commented because the analysis does nothing yet, but we
+					// still want to check outofbounds
+					// continue;
+				}
 			} catch (ApronException e) {
 				e.printStackTrace();
-			} 
-
-			
-			if (u instanceof JInvokeStmt && ((JInvokeStmt) u).getInvokeExpr() instanceof JSpecialInvokeExpr) {
-				// TODO: Get the size of the PrinterArray given as argument to the constructor
-				
-				// this todo is implemented above...
-				
 			}
-			
-			if (u instanceof JInvokeStmt && ((JInvokeStmt) u).getInvokeExpr() instanceof JVirtualInvokeExpr) {
-				
-				JInvokeStmt jInvStmt = (JInvokeStmt)u;
-				
-				JVirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr)jInvStmt.getInvokeExpr();
-				
+
+			if (u instanceof JInvokeStmt
+					&& ((JInvokeStmt) u).getInvokeExpr() instanceof JSpecialInvokeExpr) {
+				// TODO: Get the size of the PrinterArray given as argument to
+				// the constructor
+
+				// this todo is implemented above...
+
+			}
+
+			if (u instanceof JInvokeStmt
+					&& ((JInvokeStmt) u).getInvokeExpr() instanceof JVirtualInvokeExpr) {
+
+				JInvokeStmt jInvStmt = (JInvokeStmt) u;
+
+				JVirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) jInvStmt
+						.getInvokeExpr();
+
 				Local base = (Local) invokeExpr.getBase();
 				DoublePointsToSet pts = (DoublePointsToSet) pointsTo
 						.reachingObjects(base);
-				
-				if (invokeExpr.getMethod().getName().equals(Analysis.functionName)) {
+
+				if (invokeExpr.getMethod().getName()
+						.equals(Analysis.functionName)) {
 					
-					// TODO: Check whether the 'sendJob' method's argument is within bounds
-					int argument = ((IntConstant) invokeExpr.getArg(0)).value;
-					// Visit all allocation sites that the base pointer may reference
+					System.out.println("in set of " + u.toString() + " is " + state.get().toString());
+
+					// TODO: Check whether the 'sendJob' method's argument is
+					// within bounds
+					Value argument = invokeExpr.getArg(0);
+					
+
+					// Visit all allocation sites that the base pointer may
+					// reference
 					MyP2SetVisitor visitor = new MyP2SetVisitor(
-							printerArraySizeOf, argument);
+							printerArraySizeOf, argument, state);
 					pts.forall(visitor);
 					if (visitor.outOfBoundsDetected) {
 						return false;
@@ -179,29 +207,76 @@ public class Verifier {
 		PAG pag = (PAG) Scene.v().getPointsToAnalysis();
 
 		return pag;
-	}	
+	}
 }
 
 class MyP2SetVisitor extends P2SetVisitor {
 
 	HashMap<JNewExpr, Integer> printerArraySizeOf;
-	int argument;
+	Value argument;
 	boolean outOfBoundsDetected;
+	AWrapper state;
 
 	public MyP2SetVisitor(HashMap<JNewExpr, Integer> printerArraySizeOf,
-			int argument) {
+			Value argument, AWrapper state) {
 		this.printerArraySizeOf = printerArraySizeOf;
 		this.argument = argument;
 		outOfBoundsDetected = false;
+		this.state = state;
 	}
 
 	@Override
 	public void visit(Node arg0) {
 		// TODO: Check whether the argument given to sendJob is within bounds
 		AllocNode alloc = (AllocNode) arg0;
-		if (printerArraySizeOf.get(alloc.getNewExpr()) <= argument
-				|| 0 > argument) {
-			outOfBoundsDetected = true;
+		// get the size of the printerArray that we remembered earlier in the
+		// hashmap
+		int maxindex = printerArraySizeOf.get(alloc.getNewExpr())-1;
+		Texpr1CstNode sizeNode = new Texpr1CstNode(new MpqScalar(maxindex));
+		// create the node representing the argument of sendJob
+		Texpr1Node argNode = null;
+		if (argument instanceof JimpleLocal) {
+			argNode = new Texpr1VarNode(((JimpleLocal) argument).getName());
+		} else if (argument instanceof IntConstant) {
+			argNode = new Texpr1CstNode(new MpqScalar(
+					((IntConstant) argument).value));
 		}
+		/*
+		 * Texpr1Intern argIntern = new
+		 * Texpr1Intern(state.get().getEnvironment(), argNode); if
+		 * (state.satisfy(state.man, arg1, arg2))
+		 */
+
+		Texpr1Node upperBoundExpr = new Texpr1BinNode(Texpr1BinNode.OP_SUB,
+				sizeNode, argNode);
+		Texpr1Intern upperExprIntern = new Texpr1Intern(state.get()
+				.getEnvironment(), upperBoundExpr);
+		Tcons1 upperBound = new Tcons1(Tcons1.SUPEQ, upperExprIntern);
+		Texpr1Node lowerBoundExpr = argNode;
+		Texpr1Intern lowerExprIntern = new Texpr1Intern(state.get()
+				.getEnvironment(), lowerBoundExpr);
+		Tcons1 lowerBound = new Tcons1(Tcons1.SUPEQ, lowerExprIntern);
+		
+		Texpr1CstNode test = new Texpr1CstNode(new MpqScalar(3));
+		Texpr1BinNode bin = new Texpr1BinNode(Texpr1BinNode.OP_SUB ,test, argNode );
+		Texpr1Intern intern = new Texpr1Intern(state.get().getEnvironment(), bin);
+		Tcons1 tcons = new Tcons1(Tcons1.SUP, intern);
+		
+		try {
+			
+			if (!state.get().satisfy(state.man, upperBound) || !state.get().satisfy(state.man, lowerBound)) {
+				outOfBoundsDetected = true;
+			}
+		} catch (Exception e) {
+		}
+		/*
+		 * if (argument instanceof IntConstant) {
+		 * 
+		 * int argInt = ((IntConstant) argument).value; } else if (argument
+		 * instanceof JimpleLocal) { argInt = } if
+		 * (printerArraySizeOf.get(alloc.getNewExpr()) <= argument || 0 >
+		 * argument) { outOfBoundsDetected = true; }
+		 */
+
 	}
 }
