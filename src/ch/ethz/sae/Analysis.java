@@ -10,6 +10,9 @@ import apron.Abstract1;
 import apron.ApronException;
 import apron.Environment;
 import apron.Interval;
+import apron.Lincons1;
+import apron.Linexpr1;
+import apron.Linterm1;
 import apron.Manager;
 import apron.MpqScalar;
 import apron.Polka;
@@ -176,6 +179,15 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 				rAr, lAr);
 		ow_branchout.set(new Abstract1(man, in));
 		ow_branchout.get().meet(man, BranchOutconstraint);
+		Texpr1Node n = new Texpr1CstNode(new MpqScalar(10));
+		Texpr1Node v = new Texpr1VarNode("i");
+		Texpr1BinNode bi = new Texpr1BinNode(Texpr1BinNode.OP_SUB, n, v);
+		Tcons1 co = new Tcons1(env, Tcons1.DISEQ, bi);
+		
+		Linterm1 lt = new Linterm1("i", new MpqScalar(1));
+		Linexpr1 le = new Linexpr1(env, new Linterm1[]{lt}, new MpqScalar(-10));
+		Lincons1 lc = new Lincons1(Lincons1.DISEQ, le);
+		ow_branchout.get().meet(man, lc);
 		ow.set(new Abstract1(man, in));
 		ow.get().meet(man, OwConstraint);
 		
@@ -342,7 +354,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB, lAr, rAr);
 			constraint = new Tcons1(env, Tcons1.DISEQ, op);
 		} else if (e instanceof JGeExpr) {
-			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB, lAr, rAr);
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB, rAr, lAr);
 			constraint = new Tcons1(env, Tcons1.SUP, op);
 		} else if (e instanceof JGtExpr) {
 			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB, rAr, lAr);
@@ -366,6 +378,9 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 		for (Unit u: method.retrieveActiveBody().getUnits()) {
 			AWrapper state = getFlowBefore(u);
 			System.out.println(state.get());
+			if (u == op) {
+				System.out.print(">>>>");
+			}
 			System.out.println(u);
 		}
 		
@@ -602,6 +617,15 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 	@Override
 	protected AWrapper newInitialFlow() {
 		Abstract1 bot = null;
+		
+		System.out.println("================================================\nflow analysis iteration " + i);
+		for (Unit u: method.retrieveActiveBody().getUnits()) {
+			AWrapper state = getFlowBefore(u);
+			if (state != null) {
+			System.out.println(state.get());
+			System.out.println(u);
+			}
+		}
 
 		try {
 			bot = new Abstract1(man, env, true);

@@ -106,9 +106,6 @@ public class Verifier {
 		for (Unit u : unitChain) {
 			AWrapper state = fixPoint.getFlowBefore(u);
 
-			System.out.println(state.get());
-			System.out.println(u);
-
 			if (u instanceof JAssignStmt) {
 				JAssignStmt assign = (JAssignStmt) u;
 
@@ -129,10 +126,7 @@ public class Verifier {
 			try {
 				if (state.get().isBottom(Analysis.man)) {
 					// unreachable code
-
-					// commented because the analysis does nothing yet, but we
-					// still want to check outofbounds
-					// continue;
+					 continue;
 				}
 			} catch (ApronException e) {
 				e.printStackTrace();
