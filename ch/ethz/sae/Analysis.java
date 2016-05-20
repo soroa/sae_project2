@@ -237,9 +237,18 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 			List<AWrapper> fallOut, List<AWrapper> branchOuts) {
 
 		Stmt s = (Stmt) op;
-
+		if(i==0){
+			System.out.println(method.retrieveActiveBody().toString());
+		}
+		System.out.println("================================================\nflow analysis iteration " + ++i);
+		System.out.println("current statement is " + s.toString());
+		System.out.println("================================================");
 		Abstract1 in = ((AWrapper) current).get();
-
+			for (Unit u: method.retrieveActiveBody().getUnits()) {
+			AWrapper state = getFlowBefore(u);
+			System.out.println("unit: " + u + "    state:  " + state.get() );
+		}
+		
 
 		Abstract1 o;
 		try {
