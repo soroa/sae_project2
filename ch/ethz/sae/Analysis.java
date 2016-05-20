@@ -217,7 +217,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB, lAr, rAr);
 			constraint = new Tcons1(env, Tcons1.DISEQ, op);
 		} else if (e instanceof JGeExpr) {
-			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB, lAr, rAr);
+			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB, rAr, lAr);
 			constraint = new Tcons1(env, Tcons1.SUP, op);
 		} else if (e instanceof JGtExpr) {
 			Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB, rAr, lAr);
