@@ -112,4 +112,31 @@ public class TestCases {
 		Verifier.main(args);
 		assertEquals(args[0] + " MAY_DIV_ZERO\n" + args[0] + " NO_OUT_OF_BOUNDS", Verifier.response);
 	}
+
+	@Test
+	public void At10_no_oob() {
+		String args[] = {"At10_no_oob"};
+		Verifier.main(args);
+		assertEquals(args[0] + " MAY_DIV_ZERO\n" + args[0] + " NO_OUT_OF_BOUNDS", Verifier.response);
+	}
+	
+	@Test
+	public void At10_oob() {
+		String args[] = {"At10_oob"};
+		Verifier.main(args);
+		assertEquals(args[0] + " MAY_DIV_ZERO\n" + args[0] + " MAY_OUT_OF_BOUNDS", Verifier.response);
+	}
+	@Test
+	public void At11_oob() {
+		String args[] = {"At11_oob"};
+		Verifier.main(args);
+		assertEquals(args[0] + " MAY_DIV_ZERO\n" + args[0] + " MAY_OUT_OF_BOUNDS", Verifier.response);
+	}
+	
+	@Test
+	public void At12_no_oob() {
+		String args[] = {"At12_no_oob"};
+		Verifier.main(args);
+		assertEquals(args[0] + " MAY_DIV_ZERO\n" + args[0] + " NO_OUT_OF_BOUNDS", Verifier.response);
+	}
 }
