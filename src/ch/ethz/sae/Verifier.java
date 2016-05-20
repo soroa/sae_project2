@@ -28,7 +28,7 @@ import soot.jimple.internal.*;
 import soot.jimple.*;
 
 public class Verifier {
-	
+
 	/* field to record the output for junit */
 	public static String response;
 
@@ -97,7 +97,7 @@ public class Verifier {
 
 	private static boolean verifyBounds(SootMethod method, Analysis fixPoint,
 			PAG pointsTo) {
-		
+
 		// TODO: Create a list of all allocation sites for PrinterArray
 
 		HashMap<JNewExpr, Integer> printerArraySizeOf = new HashMap<JNewExpr, Integer>();
@@ -117,16 +117,21 @@ public class Verifier {
 					JSpecialInvokeExpr constructorCall = (JSpecialInvokeExpr) ((JInvokeStmt) successor)
 							.getInvokeExpr();
 
-					int size = ((IntConstant) constructorCall.getArg(0)).value;
-					printerArraySizeOf
-							.put((JNewExpr) assign.getRightOp(), size);
+					int size = -1;
+					if (constructorCall.getArg(0) instanceof IntConstant) {
+						// we only need to handle integer constants as arguments
+						size = ((IntConstant) constructorCall.getArg(0)).value;
+						
+					}
+					printerArraySizeOf.put((JNewExpr) assign.getRightOp(),
+							size);
 				}
 			}
 
 			try {
 				if (state.get().isBottom(Analysis.man)) {
 					// unreachable code
-					 continue;
+					continue;
 				}
 			} catch (ApronException e) {
 				e.printStackTrace();
@@ -155,13 +160,13 @@ public class Verifier {
 
 				if (invokeExpr.getMethod().getName()
 						.equals(Analysis.functionName)) {
-					
-					System.out.println("in set of " + u.toString() + " is " + state.get().toString());
+
+					System.out.println("in set of " + u.toString() + " is "
+							+ state.get().toString());
 
 					// TODO: Check whether the 'sendJob' method's argument is
 					// within bounds
 					Value argument = invokeExpr.getArg(0);
-					
 
 					// Visit all allocation sites that the base pointer may
 					// reference
@@ -225,7 +230,12 @@ class MyP2SetVisitor extends P2SetVisitor {
 		AllocNode alloc = (AllocNode) arg0;
 		// get the size of the printerArray that we remembered earlier in the
 		// hashmap
-		int maxindex = printerArraySizeOf.get(alloc.getNewExpr())-1;
+		int maxindex = printerArraySizeOf.get(alloc.getNewExpr()) - 1;
+		if (maxindex < 0) {
+			// this printerarray object has been initialized with a variable
+			outOfBoundsDetected = true;
+			return;
+		}
 		Texpr1CstNode sizeNode = new Texpr1CstNode(new MpqScalar(maxindex));
 		// create the node representing the argument of sendJob
 		Texpr1Node argNode = null;
@@ -250,15 +260,18 @@ class MyP2SetVisitor extends P2SetVisitor {
 		Texpr1Intern lowerExprIntern = new Texpr1Intern(state.get()
 				.getEnvironment(), lowerBoundExpr);
 		Tcons1 lowerBound = new Tcons1(Tcons1.SUPEQ, lowerExprIntern);
-		
+
 		Texpr1CstNode test = new Texpr1CstNode(new MpqScalar(3));
-		Texpr1BinNode bin = new Texpr1BinNode(Texpr1BinNode.OP_SUB ,test, argNode );
-		Texpr1Intern intern = new Texpr1Intern(state.get().getEnvironment(), bin);
+		Texpr1BinNode bin = new Texpr1BinNode(Texpr1BinNode.OP_SUB, test,
+				argNode);
+		Texpr1Intern intern = new Texpr1Intern(state.get().getEnvironment(),
+				bin);
 		Tcons1 tcons = new Tcons1(Tcons1.SUP, intern);
-		
+
 		try {
-			
-			if (!state.get().satisfy(state.man, upperBound) || !state.get().satisfy(state.man, lowerBound)) {
+
+			if (!state.get().satisfy(state.man, upperBound)
+					|| !state.get().satisfy(state.man, lowerBound)) {
 				outOfBoundsDetected = true;
 			}
 		} catch (Exception e) {
