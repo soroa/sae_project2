@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import apron.Abstract1;
 import apron.ApronException;
+import apron.Interval;
 import apron.MpqScalar;
 import apron.Tcons1;
 import apron.Texpr1BinNode;
@@ -28,7 +29,7 @@ import soot.jimple.internal.*;
 import soot.jimple.*;
 
 public class Verifier {
-
+	
 	/* field to record the output for junit */
 	public static String response;
 
@@ -80,6 +81,7 @@ public class Verifier {
 			Analysis fixPoint) {
 		for (Unit u : method.retrieveActiveBody().getUnits()) {
 			AWrapper state = fixPoint.getFlowBefore(u);
+			System.out.println("unit is" + u.toString());
 			try {
 				if (state.get().isBottom(Analysis.man))
 					// unreachable code
@@ -88,16 +90,91 @@ public class Verifier {
 				e.printStackTrace();
 			}
 
+			if (u instanceof JAssignStmt) {
+				JAssignStmt assign = (JAssignStmt) u;
+				Value left = assign.getLeftOp();
+				Value right = assign.getRightOp();
+				// division assigned to an int variable
+				// right can be Intconstnat or JimpleLocal
+				// System.out.println("right is " +
+				// right.getClass().toString());
+				// System.out.println("ligt is " + left.getClass().toString());
+
+				// case 1: assignment to local variable
+				if (left instanceof JimpleLocal && right instanceof JDivExpr) {
+
+					System.out
+							.println("Division right side of assignment detected");
+
+					JDivExpr divExp = (JDivExpr) right;
+					if (divExpressionDividesByZero(divExp, state)) {
+						return false;
+					}
+
+				}// end if assignment with division on the side
+			}// end if assignemnt
+
+			// case 2: call to sendJob() -> argument could divide by
+			if (u instanceof JInvokeStmt
+					&& ((JInvokeStmt) u).getInvokeExpr() instanceof JVirtualInvokeExpr) {
+				
+				JVirtualInvokeExpr sendJobCallExpr = (JVirtualInvokeExpr) ((JInvokeStmt) u).getInvokeExpr();
+				Value sendJobArg = sendJobCallExpr.getArg(0);
+				if (sendJobArg instanceof JDivExpr) {
+					if(divExpressionDividesByZero((JDivExpr)sendJobArg, state)){
+						return false;
+					}
+				}
+			}
 			// TODO: Check that all divisors are not zero
 		}
 
 		// Return false if the method may have division by zero errors
+		return true;
+	}
+
+	private static boolean divExpressionDividesByZero(JDivExpr divExp,
+			AWrapper state) {
+		Value divisor = divExp.getOp2();
+		// 1.1 divisor is IntConstat and 0
+		if (divisor instanceof IntConstant) {
+			IntConstant divisorInt = (IntConstant) divisor;
+			if (divisorInt.value == 0) {
+
+				System.out
+						.println("division by 0 detected! divisor is a 0 constant");
+				return true;
+
+			}
+		}
+
+		if (divisor instanceof JimpleLocal) {
+			JimpleLocal divisorVar = (JimpleLocal) divisor;
+			String varName = divisorVar.getName();
+			Interval intr;
+			try {
+				intr = state.get().getBound(state.man, varName);
+				System.out.println("state  is "+ state.get());
+				System.out.println("interval of var " + varName + " of divisor is " + intr.toString());
+
+				if (intr.sup().cmp(-1) == 1 && intr.inf().cmp(1) == -1) {
+					System.out
+							.println("division by 0 detected! divisor is a potentially 0 variable");
+					return true;
+				}
+			} catch (ApronException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+
 		return false;
 	}
 
 	private static boolean verifyBounds(SootMethod method, Analysis fixPoint,
 			PAG pointsTo) {
-
+		
 		// TODO: Create a list of all allocation sites for PrinterArray
 
 		HashMap<JNewExpr, Integer> printerArraySizeOf = new HashMap<JNewExpr, Integer>();
@@ -105,6 +182,9 @@ public class Verifier {
 
 		for (Unit u : unitChain) {
 			AWrapper state = fixPoint.getFlowBefore(u);
+
+			System.out.println(state.get());
+			System.out.println(u);
 
 			if (u instanceof JAssignStmt) {
 				JAssignStmt assign = (JAssignStmt) u;
@@ -131,7 +211,10 @@ public class Verifier {
 			try {
 				if (state.get().isBottom(Analysis.man)) {
 					// unreachable code
-					continue;
+
+					// commented because the analysis does nothing yet, but we
+					// still want to check outofbounds
+					 continue;
 				}
 			} catch (ApronException e) {
 				e.printStackTrace();
@@ -160,13 +243,13 @@ public class Verifier {
 
 				if (invokeExpr.getMethod().getName()
 						.equals(Analysis.functionName)) {
-
-					System.out.println("in set of " + u.toString() + " is "
-							+ state.get().toString());
+					
+					System.out.println("in set of " + u.toString() + " is " + state.get().toString());
 
 					// TODO: Check whether the 'sendJob' method's argument is
 					// within bounds
 					Value argument = invokeExpr.getArg(0);
+					
 
 					// Visit all allocation sites that the base pointer may
 					// reference
@@ -230,12 +313,7 @@ class MyP2SetVisitor extends P2SetVisitor {
 		AllocNode alloc = (AllocNode) arg0;
 		// get the size of the printerArray that we remembered earlier in the
 		// hashmap
-		int maxindex = printerArraySizeOf.get(alloc.getNewExpr()) - 1;
-		if (maxindex < 0) {
-			// this printerarray object has been initialized with a variable
-			outOfBoundsDetected = true;
-			return;
-		}
+		int maxindex = printerArraySizeOf.get(alloc.getNewExpr())-1;
 		Texpr1CstNode sizeNode = new Texpr1CstNode(new MpqScalar(maxindex));
 		// create the node representing the argument of sendJob
 		Texpr1Node argNode = null;
@@ -260,18 +338,15 @@ class MyP2SetVisitor extends P2SetVisitor {
 		Texpr1Intern lowerExprIntern = new Texpr1Intern(state.get()
 				.getEnvironment(), lowerBoundExpr);
 		Tcons1 lowerBound = new Tcons1(Tcons1.SUPEQ, lowerExprIntern);
-
+		
 		Texpr1CstNode test = new Texpr1CstNode(new MpqScalar(3));
-		Texpr1BinNode bin = new Texpr1BinNode(Texpr1BinNode.OP_SUB, test,
-				argNode);
-		Texpr1Intern intern = new Texpr1Intern(state.get().getEnvironment(),
-				bin);
+		Texpr1BinNode bin = new Texpr1BinNode(Texpr1BinNode.OP_SUB ,test, argNode );
+		Texpr1Intern intern = new Texpr1Intern(state.get().getEnvironment(), bin);
 		Tcons1 tcons = new Tcons1(Tcons1.SUP, intern);
-
+		
 		try {
-
-			if (!state.get().satisfy(state.man, upperBound)
-					|| !state.get().satisfy(state.man, lowerBound)) {
+			
+			if (!state.get().satisfy(state.man, upperBound) || !state.get().satisfy(state.man, lowerBound)) {
 				outOfBoundsDetected = true;
 			}
 		} catch (Exception e) {

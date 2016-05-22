@@ -10,9 +10,6 @@ import apron.Abstract1;
 import apron.ApronException;
 import apron.Environment;
 import apron.Interval;
-import apron.Lincons1;
-import apron.Linexpr1;
-import apron.Linterm1;
 import apron.Manager;
 import apron.MpqScalar;
 import apron.Polka;
@@ -138,7 +135,6 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 	/* === Constructor === */
 	public Analysis(UnitGraph g, SootClass jc, SootMethod method) {
 		super(g);
-		this.method = method;
 
 		this.g = g;
 		this.jclass = jc;
@@ -146,6 +142,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 		buildEnvironment();
 		instantiateDomain();
 
+		this.method = method;
 		loopHeads = new HashMap<Unit, Counter>();
 		backJumps = new HashMap<Unit, Counter>();
 		for (Loop l : new LoopNestTree(g.getBody())) {
@@ -179,142 +176,10 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 				rAr, lAr);
 		ow_branchout.set(new Abstract1(man, in));
 		ow_branchout.get().meet(man, BranchOutconstraint);
-		Texpr1Node n = new Texpr1CstNode(new MpqScalar(10));
-		Texpr1Node v = new Texpr1VarNode("i");
-		Texpr1BinNode bi = new Texpr1BinNode(Texpr1BinNode.OP_SUB, n, v);
-		Tcons1 co = new Tcons1(env, Tcons1.DISEQ, bi);
-		
-		Linterm1 lt = new Linterm1("i", new MpqScalar(1));
-		Linexpr1 le = new Linexpr1(env, new Linterm1[]{lt}, new MpqScalar(-10));
-		Lincons1 lc = new Lincons1(Lincons1.DISEQ, le);
-		ow_branchout.get().meet(man, lc);
 		ow.set(new Abstract1(man, in));
 		ow.get().meet(man, OwConstraint);
 		
-		/*
-		if (left instanceof IntConstant) {
-			lAr = new Texpr1CstNode(new MpqScalar(((IntConstant) left).value));
-			
-		} else if (left instanceof JimpleLocal) {
-			if (left.getType().toString().equals("PrinterArray")) {
-				ow.set(new Abstract1(man, in));
-				ow_branchout.set(new Abstract1(man, in));
-				return;
-			}
-			lAr = new Texpr1VarNode(((JimpleLocal) left).getName());
-			if (right instanceof IntConstant) {
-				Texpr1Node rAr = new Texpr1CstNode(new MpqScalar(
-						((IntConstant) right).value));
-				Texpr1Intern xp = new Texpr1Intern(env, rAr);
-				Tcons1 OwConstraint = getOwConstraint(eqExpr, rAr, lAr);
-				Tcons1 BranchOutconstraint = getBranchoutConstraint(eqExpr,
-						rAr, lAr);
-				ow_branchout.set(new Abstract1(man, in));
-				ow_branchout.get().meet(man, BranchOutconstraint);
-				System.out.println("meeting " + BranchOutconstraint.toString()
-						+ " with " + ow_branchout.get().toString(man));
-				ow.set(new Abstract1(man, in));
-				ow.get().meet(man, OwConstraint);
-				System.out.println("meeting " + OwConstraint.toString()
-						+ " with " + ow.get().toString(man));
-
-				System.out.println("After if ow is " + ow.get().toString(man));
-				System.out.println("After if ow_branchout is "
-						+ ow_branchout.get().toString(man));
-
-			} else if (right instanceof JimpleLocal) {
-				Texpr1Node rAr = makeTexpr1NodeFromValue(right);
-				Texpr1Intern xp = new Texpr1Intern(env, rAr);
-				Tcons1 OwConstraint = getOwConstraint(eqExpr, rAr, lAr);
-				Tcons1 BranchOutconstraint = getBranchoutConstraint(eqExpr,
-						rAr, lAr);
-				ow_branchout.set(new Abstract1(man, in));
-				ow_branchout.get().meet(man, BranchOutconstraint);
-				System.out.println("meeting " + BranchOutconstraint.toString()
-						+ " with " + ow_branchout.get().toString(man));
-				ow.set(new Abstract1(man, in));
-				ow.get().meet(man, OwConstraint);
-				System.out.println("meeting " + OwConstraint.toString()
-						+ " with " + ow.get().toString(man));
-
-				System.out.println("After if ow is " + ow.get().toString(man));
-				System.out.println("After if ow_branchout is "
-						+ ow_branchout.get().toString(man));
-			}
-		} else {
-			System.out.println("left: unexpected:" + left.getClass() + " name:"
-					+ ((JimpleLocal) left).getName());
-		}
-		*/
 		
-		
-		/*
-		 * private void handleIf(AbstractBinopExpr eqExpr, Abstract1 in,
-		 * AWrapper ow, AWrapper ow_branchout) throws ApronException {
-		 * 
-		 * Value left = eqExpr.getOp1(); Value right = eqExpr.getOp2();
-		 * System.out.println("vars are " +
-		 * in.getEnvironment().getIntVars()[0].toString());
-		 * 
-		 * Texpr1Node lAr = null;
-		 * 
-		 * if (left instanceof IntConstant) { lAr = new Texpr1CstNode(new
-		 * MpqScalar(((IntConstant) left).value)); } else if (left instanceof
-		 * JimpleLocal) { if (left.getType().toString().equals("PrinterArray"))
-		 * { ow.set(new Abstract1(man, in)); ow_branchout.set(new Abstract1(man,
-		 * in)); return; } lAr = new Texpr1VarNode(((JimpleLocal)
-		 * left).getName()); if (right instanceof IntConstant) {
-		 * 
-		 * if (eqExpr instanceof JNeExpr) {
-		 * 
-		 * Texpr1Node rAr = new Texpr1CstNode(new MpqScalar( ((IntConstant)
-		 * right).value)); Texpr1Intern xp = new Texpr1Intern(env, rAr); int i =
-		 * ((IntConstant) right).value; Texpr1BinNode op = new
-		 * Texpr1BinNode(Texpr1BinNode.OP_SUB, lAr, rAr); Tcons1 constraint =
-		 * new Tcons1(env, Tcons1.DISEQ, op); ow_branchout.set(new
-		 * Abstract1(man, in)); ow_branchout.get().meet(man, constraint);
-		 * 
-		 * ow.set(new Abstract1(man, in)); ow.get().assign(man, ((JimpleLocal)
-		 * left).getName(), xp, null); System.out.println("After if ow is " +
-		 * ow.get().toString(man));
-		 * System.out.println("After if ow_branchout is " +
-		 * ow_branchout.get().toString(man)); } if (eqExpr instanceof JLeExpr) {
-		 * Texpr1Node rAr = new Texpr1CstNode(new MpqScalar( ((IntConstant)
-		 * right).value)); Texpr1Intern xp = new Texpr1Intern(env, rAr);
-		 * Texpr1BinNode op = new Texpr1BinNode(Texpr1BinNode.OP_SUB, rAr, lAr);
-		 * Tcons1 constraint_branchout = new Tcons1(env, Tcons1.SUPEQ, op);
-		 * ow_branchout.set(new Abstract1(man, in));
-		 * ow_branchout.get().meet(man, constraint_branchout);
-		 * 
-		 * op = new Texpr1BinNode(Texpr1BinNode.OP_SUB, lAr, rAr); Tcons1
-		 * constraint_fallout = new Tcons1(env, Tcons1.SUP, op); ow.set(new
-		 * Abstract1(man, in)); ow.get().meet(man,constraint_fallout);
-		 * 
-		 * System.out.println("After if ow is " + ow.get().toString(man));
-		 * System.out.println("After if ow_branchout is " +
-		 * ow_branchout.get().toString(man)); }
-		 * 
-		 * } } else { System.out.println("left: unexpected:" + left.getClass() +
-		 * " name:" + ((JimpleLocal) left).getName()); }
-		 * 
-		 * if (eqExpr instanceof JEqExpr) {
-		 * 
-		 * } else if (eqExpr instanceof JEqExpr) {
-		 * 
-		 * } else if (eqExpr instanceof JGeExpr) {
-		 * 
-		 * } else if (eqExpr instanceof JGtExpr) {
-		 * 
-		 * } else if (eqExpr instanceof JLeExpr) {
-		 * 
-		 * } else if (eqExpr instanceof JLtExpr) {
-		 * 
-		 * } else if (eqExpr instanceof JNeExpr) {
-		 * 
-		 * }
-		 */
-
-		// TODO: Handle required conditional expressions
 	}
 
 	private Tcons1 getBranchoutConstraint(AbstractBinopExpr e, Texpr1Node rAr,
@@ -374,18 +239,18 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 			List<AWrapper> fallOut, List<AWrapper> branchOuts) {
 
 		Stmt s = (Stmt) op;
+		if(i==0){
+			System.out.println(method.retrieveActiveBody().toString());
+		}
 		System.out.println("================================================\nflow analysis iteration " + ++i);
-		for (Unit u: method.retrieveActiveBody().getUnits()) {
+		System.out.println("current statement is " + s.toString());
+		System.out.println("================================================");
+		Abstract1 in = ((AWrapper) current).get();
+			for (Unit u: method.retrieveActiveBody().getUnits()) {
 			AWrapper state = getFlowBefore(u);
-			System.out.println(state.get());
-			if (u == op) {
-				System.out.print(">>>>");
-			}
-			System.out.println(u);
+			System.out.println("unit: " + u + "    state:  " + state.get() );
 		}
 		
-		Abstract1 in = ((AWrapper) current).get();
-
 
 		Abstract1 o;
 		try {
@@ -435,9 +300,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 						|| condition instanceof JGtExpr) {
 
 					AWrapper ow = new AWrapper(null);
-					ow.man = man;
 					AWrapper ow_branchout = new AWrapper(null);
-					ow_branchout.man = man;
 
 					AbstractBinopExpr eqExpr = (AbstractBinopExpr) condition;
 
@@ -601,6 +464,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 	@Override
 	protected void merge(AWrapper src1, AWrapper src2, AWrapper trg) {
 
+		
 		Abstract1 a1 = src1.get();
 		Abstract1 a2 = src2.get();
 		Abstract1 a3 = null;
@@ -617,15 +481,6 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 	@Override
 	protected AWrapper newInitialFlow() {
 		Abstract1 bot = null;
-		
-		System.out.println("================================================\nflow analysis iteration " + i);
-		for (Unit u: method.retrieveActiveBody().getUnits()) {
-			AWrapper state = getFlowBefore(u);
-			if (state != null) {
-			System.out.println(state.get());
-			System.out.println(u);
-			}
-		}
 
 		try {
 			bot = new Abstract1(man, env, true);
@@ -679,11 +534,11 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 		}
 		return result;
 	}
+	
+	static int i = 0;
 
 	public static SootMethod method;
 
-	static int i = 0;
-	
 	public static Manager man;
 	private Environment env;
 	public UnitGraph g;
