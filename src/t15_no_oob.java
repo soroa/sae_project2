@@ -9,7 +9,7 @@ public class t15_no_oob {
 			i = 10;
 		}
 
-		if (i != 10) {
+		if (i < 10) {
 			p1.sendJob(i);
 		}
 

@@ -1,5 +1,5 @@
 
-public class t11_oob {
+public class At11_oob {
 	public static void m() {
 		int a= 1; 
 		PrinterArray p0; 

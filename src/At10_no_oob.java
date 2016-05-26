@@ -1,6 +1,6 @@
 
 //multiplication of two int as arg of sendJob
-public class t10_no_oob {
+public class At10_no_oob {
 	public static void m() {
 		PrinterArray p = new PrinterArray(30);
 		int a = 4;
