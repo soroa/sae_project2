@@ -139,6 +139,9 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 		this.g = g;
 		this.jclass = jc;
 
+		System.out.println("\n---------analyzing next method----------\n");
+		i = 0;
+		
 		buildEnvironment();
 		instantiateDomain();
 
