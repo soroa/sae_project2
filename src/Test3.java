@@ -1,19 +1,19 @@
-                 /**
- * An example application you may want to analyze to test your analysis.
- *
- */
+// if clausel
+// NO_DIV_ZERO
+// NO_OUT_OF_BOUNDS
+// Timon Blattner timonbl@ethz.ch
+
 public class Test3 {
-    public static void foo() {
-        PrinterArray pa = new PrinterArray(3); 
-        /*
-        int i = 2;
-        if (i > 0) {
-        pa = new PrinterArray(7);
+    public static void foo(int i) {
+        int x = 0;
+        if (i < 0) {
+            x = 1 - i;
+            i = 0 - i;
         } else {
-        pa = new PrinterArray(5);
+            x = i;
         }
-        */
-        
-        pa.sendJob(2);
+
+        PrinterArray pa = new PrinterArray(x);
+        pa.sendJob(i);
     }
 }
