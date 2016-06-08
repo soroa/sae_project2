@@ -55,7 +55,7 @@ import soot.util.Chain;
 
 public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 
-	private static final int WIDENING_THRESHOLD = 6;
+	private static final int WIDENING_THRESHOLD = 36;
 
 	private HashMap<Unit, Counter> loopHeads, backJumps;
 
