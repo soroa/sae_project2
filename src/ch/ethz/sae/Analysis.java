@@ -55,7 +55,7 @@ import soot.util.Chain;
 
 public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 
-	private static final int WIDENING_THRESHOLD = 36;
+	private static final int WIDENING_THRESHOLD =36;
 
 	private HashMap<Unit, Counter> loopHeads, backJumps;
 
@@ -139,7 +139,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 		this.g = g;
 		this.jclass = jc;
 
-		System.out.println("\n---------analyzing next method----------\n");
+//		System.out.println("\n---------analyzing next method----------\n");
 		i = 0;
 		
 		buildEnvironment();
@@ -242,16 +242,16 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 			List<AWrapper> fallOut, List<AWrapper> branchOuts) {
 
 		Stmt s = (Stmt) op;
-		if(i==0){
-			System.out.println(method.retrieveActiveBody().toString());
-		}
-		System.out.println("================================================\nflow analysis iteration " + ++i);
-		System.out.println("current statement is " + s.toString());
-		System.out.println("================================================");
+//		if(i==0){
+//			System.out.println(method.retrieveActiveBody().toString());
+//		}
+//		System.out.println("================================================\nflow analysis iteration " + ++i);
+//		System.out.println("current statement is " + s.toString());
+//		System.out.println("================================================");
 		Abstract1 in = ((AWrapper) current).get();
 			for (Unit u: method.retrieveActiveBody().getUnits()) {
 			AWrapper state = getFlowBefore(u);
-			System.out.println("unit: " + u + "    state:  " + state.get() );
+//			System.out.println("unit: " + u + "    state:  " + state.get() );
 		}
 		
 
@@ -388,7 +388,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 					rAr = makeTexpr1NodeFromValue(op2);
 					/* careful with rounding: */
 					bin = new Texpr1BinNode(Texpr1BinNode.OP_DIV, Texpr1BinNode.
-							RTYPE_INT, Texpr1BinNode.RDIR_ZERO, lAr, rAr);
+							RTYPE_INT, Texpr1BinNode.RDIR_DOWN, lAr, rAr);
 					xp = new Texpr1Intern(env, bin);
 					o.assign(man, varName, xp, null);
 				}
@@ -451,8 +451,18 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 				++count.value;
 				if (count.value < WIDENING_THRESHOLD) {
 					a3 = a1.joinCopy(man, a2);
+//					System.out.println("join");
+//					System.out.println("succNode is " + succNode.toString());
+//					System.out.println("branch 1 is " + a1.toString());
+//					System.out.println("branch 2 is " + a2.toString());
+
 				} else {
 					a3 = a1.widening(man, a2);
+//					System.out.println("widen");
+//					System.out.println("succNode is " + succNode.toString());
+//					System.out.println("branch 1 is " + a1.toString());
+//					System.out.println("branch 2 is " + a2.toString());
+//					System.out.println("widening");
 				}
 			} else {
 				a3 = a1.joinCopy(man, a2);
@@ -461,6 +471,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<AWrapper> {
 			System.out.println(e);
 		}
 		u.set(a3);
+//		System.out.println("b1 + b2 is " + a3.toString());
 
 	}
 

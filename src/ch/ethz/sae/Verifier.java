@@ -81,7 +81,7 @@ public class Verifier {
 			Analysis fixPoint) {
 		for (Unit u : method.retrieveActiveBody().getUnits()) {
 			AWrapper state = fixPoint.getFlowBefore(u);
-			System.out.println("unit is" + u.toString());
+			//System.out.println("unit is" + u.toString());
 			try {
 				if (state.get().isBottom(Analysis.man))
 					// unreachable code
@@ -103,8 +103,8 @@ public class Verifier {
 				// case 1: assignment to local variable
 				if (left instanceof JimpleLocal && right instanceof JDivExpr) {
 
-					System.out
-							.println("Division right side of assignment detected");
+//					System.out
+//							.println("Division right side of assignment detected");
 
 					JDivExpr divExp = (JDivExpr) right;
 					if (divExpressionDividesByZero(divExp, state)) {
@@ -141,8 +141,8 @@ public class Verifier {
 			IntConstant divisorInt = (IntConstant) divisor;
 			if (divisorInt.value == 0) {
 
-				System.out
-						.println("division by 0 detected! divisor is a 0 constant");
+//				System.out
+//						.println("division by 0 detected! divisor is a 0 constant");
 				return true;
 
 			}
@@ -154,12 +154,12 @@ public class Verifier {
 			Interval intr;
 			try {
 				intr = state.get().getBound(state.man, varName);
-				System.out.println("state  is "+ state.get());
-				System.out.println("interval of var " + varName + " of divisor is " + intr.toString());
+//				System.out.println("state  is "+ state.get());
+//				System.out.println("interval of var " + varName + " of divisor is " + intr.toString());
 
 				if (intr.sup().cmp(-1) == 1 && intr.inf().cmp(1) == -1) {
-					System.out
-							.println("division by 0 detected! divisor is a potentially 0 variable");
+//					System.out
+//							.println("division by 0 detected! divisor is a potentially 0 variable");
 					return true;
 				}
 			} catch (ApronException e) {
@@ -183,8 +183,8 @@ public class Verifier {
 		for (Unit u : unitChain) {
 			AWrapper state = fixPoint.getFlowBefore(u);
 
-			System.out.println(state.get());
-			System.out.println(u);
+//			System.out.println(state.get());
+//			System.out.println(u);
 
 			if (u instanceof JAssignStmt) {
 				JAssignStmt assign = (JAssignStmt) u;
@@ -244,7 +244,7 @@ public class Verifier {
 				if (invokeExpr.getMethod().getName()
 						.equals(Analysis.functionName)) {
 					
-					System.out.println("in set of " + u.toString() + " is " + state.get().toString());
+//					System.out.println("in set of " + u.toString() + " is " + state.get().toString());
 
 					// TODO: Check whether the 'sendJob' method's argument is
 					// within bounds
